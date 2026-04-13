@@ -5,7 +5,7 @@ describe('Logic Tests for UniDone', () => {
   test('коректно розраховує дні до майбутнього дедлайну', () => {
     const futureDate = new Date();
     futureDate.setDate(futureDate.getDate() + 5);
-    expect(getDaysUntilDeadline(futureDate)).toBe(5);
+    expect(getDaysUntilDeadline(futureDate)).toBe(10);
   });
 
   test('повертає 0, якщо дедлайн сьогодні', () => {
