@@ -1,14 +1,12 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue' // 1. ДОДАЛИ onMounted
+import { ref, computed, onMounted } from 'vue'
 import { getDaysUntilDeadline, getPriorityColor } from './utils'
-import posthog from 'posthog-js' 
+import posthog from 'posthog-js'
 
-// Зчитуємо змінну тут, де Vue точно дозволяє використовувати import.meta
 const appStatus = import.meta.env.VITE_APP_STATUS || 'Development'
-
 const deadlineInput = ref('')
 const priorityInput = ref('medium')
-const showUrgentWarning = ref(false) // 2. ДОДАЛИ ЗМІННУ ДЛЯ ФЛАГА
+const showUrgentWarning = ref(false)
 
 const daysLeft = computed(() => {
   if (!deadlineInput.value) return null
@@ -17,7 +15,6 @@ const daysLeft = computed(() => {
 
 const currentColor = computed(() => getPriorityColor(priorityInput.value))
 
-// ФУНКЦІЇ ДЛЯ ВІДПРАВКИ ПОДІЙ В АНАЛІТИКУ
 const trackDeadlineEvent = () => {
   if (deadlineInput.value && daysLeft.value !== null) {
     posthog.capture('deadline_calculated', {
@@ -33,12 +30,17 @@ const trackPriorityEvent = () => {
   });
 }
 
-// 3. ПЕРЕВІРКА ФІЧА-ФЛАГА ПРИ ЗАВАНТАЖЕННІ
 onMounted(() => {
   posthog.onFeatureFlags(() => {
     showUrgentWarning.value = posthog.isFeatureEnabled('show-urgent-warning')
   })
 })
+
+// ОНОВЛЕНА ФУНКЦІЯ: спочатку показуємо алерт, потім кидаємо помилку
+const throwError = () => {
+  alert("🚨 Помилка генерується! Перевіряй Sentry через 10 секунд.");
+  throw new Error("Sentry Test Error: UniDone broke!");
+}
 </script>
 
 <template>
@@ -50,6 +52,15 @@ onMounted(() => {
       style="margin-bottom: 20px; padding: 6px 12px; background-color: #f3f4f6; border: 1px solid #d1d5db; border-radius: 6px; display: inline-block; font-size: 14px; font-weight: bold; color: #374151;"
     >
       Режим: {{ appStatus }}
+    </div>
+
+    <div style="margin-bottom: 20px;">
+      <button 
+        @click="throwError" 
+        class="break-button"
+      >
+        Break the world
+      </button>
     </div>
 
     <div 
@@ -64,7 +75,6 @@ onMounted(() => {
       <input
         v-model="deadlineInput"
         type="date"
-        data-testid="deadline-input"
         @change="trackDeadlineEvent" 
       > 
     </div>
@@ -73,7 +83,6 @@ onMounted(() => {
       <label>Пріоритет: </label>
       <select
         v-model="priorityInput"
-        data-testid="priority-select"
         @change="trackPriorityEvent"
       > 
         <option value="high">Високий</option>
@@ -87,12 +96,31 @@ onMounted(() => {
       style="margin-top: 20px; padding: 10px; border: 1px solid #ccc;"
     >
       <h2>Результат:</h2>
-      <p data-testid="days-result">
-        Днів до здачі: <strong>{{ daysLeft }}</strong>
-      </p>
-      <p data-testid="priority-result">
-        Колір статусу: <span :style="{ color: currentColor, fontWeight: 'bold' }">{{ currentColor }}</span>
-      </p>
+      <p>Днів до здачі: <strong>{{ daysLeft }}</strong></p>
+      <p>Колір статусу: <span :style="{ color: currentColor, fontWeight: 'bold' }">{{ currentColor }}</span></p>
     </div>
   </div>
 </template>
+
+<style scoped>
+.break-button {
+  background-color: #dc2626;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.2s ease;
+}
+
+.break-button:hover {
+  background-color: #ef4444; /* Світліша при наведенні */
+  transform: translateY(-1px);
+}
+
+.break-button:active {
+  background-color: #b91c1c; /* Темніша при натисканні */
+  transform: scale(0.95); /* Візуальне "вдавлювання" */
+}
+</style>
